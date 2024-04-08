@@ -5,3 +5,4 @@ price: 0
 chapters:
   - "ab22af"
   - "246bb9"
+allow_override: true
