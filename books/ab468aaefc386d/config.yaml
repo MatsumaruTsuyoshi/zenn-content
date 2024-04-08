@@ -1,0 +1,19 @@
+title: "【入門】Flutterでレイヤードアーキテクチャ開発〜非公式ZennAPIを使ってトレンド記事を取得して表示からテストまで〜"
+summary: |-
+  独学でアプリを作っていた過去の自分に向けて、レイヤードアーキテクチャ開発の良し悪しと、具体的な実装について書いてみました。
+
+  状態管理はRiverpod, Hooks, Freezedを使っています。
+topics:
+  - "flutter"
+  - "アーキテクチャ"
+published: true
+price: 0
+toc_depth: 2
+chapters:
+  - "7d3b94"
+  - "97906a"
+  - "6efbd6"
+  - "d3aeb8"
+  - "a16136"
+  - "0f15ab"
+  - "0138c0"
