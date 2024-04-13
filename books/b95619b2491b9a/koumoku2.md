@@ -3,23 +3,30 @@ title: "項目2：多くのコンストラクタパラメータに直面した�
 free: false
 ---
 ## 1. はじめに
-### 1.1. 問題の紹介
 
 
+この章では以下コンストラクタパターンについて3つ事例とともに紹介します。
 
-### 1.2. 検討すべき要素
+1. テレスコーピングコンストラクタパターン
+2. JavaBeansパターン
+3. ビルダーパターン
 
+ここでは使い方を比較することで、可読性や安全性の観点からビルダーパターンの方が優れていることを示しています。
 
-## 2. コンストラクタの課題
+:::message
+Kotlinだと各コンストラクタパターンの課題が見えづらいので、今回はJavaで見ていきます。
+:::
+
+## 2. コンストラクタパターン
 ### 2.1. テレスコーピングコンストラクタ
+
 #### 2.1.1. 概要
-テレスコーピングコンストラクタは、クラスに必要なパラメータを少しずつ増やしていく方法です。
 
-#### 2.1.2. 課題と限界
+このパターンの名前は、望遠鏡（telescope）が段階的に伸縮する様子に例えられています。テレスコーピングコンストラクタは、必須パラメータだけでなくオプショナルなパラメータも段階的に追加していく方法で、それぞれの新しいパラメータに対応するために新たなコンストラクタを追加していくという特徴があります。このように徐々に「伸びていく」コンストラクタ群が望遠鏡のように見えることから、この名前がつけられました。
 
-テレスコーピングコンストラクタパターンではKotlinだと課題が見えづらいので、今回はJavaで見ていきます。
+#### 2.1.2. 事例
 
-NutritionFactsは加工食品の栄養成分のクラスになります。2つの必須パラメータと残りはオプションになります。
+NutritionFactsは加工食品の栄養成分のクラスになります。2つの必須パラメータと残りはオプションになります。それぞれのパラメータごとにコンストラクタがあります。
 
 ```java
 public class NutritionFacts {
@@ -65,86 +72,200 @@ public class NutritionFacts {
 
 オプションごとにコンストラクタを作る必要があり、パラメータが増えると手に負えなくなりそうです。
 
-インスタンスを生成する場合、すべてのパラメータを持つコンストラクタを使います。何がどこのパラメータか分かりづらいです。
+呼び出し側は以下の通りです。
 ```java
 NutritionFacts cocaCola = new NutritionFacts(240, 8, 100, 0, 35, 27);
 ```
+インスタンスを生成する場合、何がどこのパラメータか分かりづらいです。
 
-まとめると以下の通りです。
 
-:::message
+#### 2.1.3. 課題 
+
+課題をまとめると以下の通りです。
+
 - パラメータが増えるたびに、コンストラクタが増える
 - パラメータの特定が難しい
 - コードが読みづらい
-:::
-
-:::details Kotlinの場合
-Kotlinでテレスコーピングコンストラクタパターンで書くとこうなります。Javaに比べるとだいぶスッキリしています。
-```Kotlin
-class NutritionFacts(
-    val servingSize: Int, // 必須 (mL)
-    val servings: Int,    // 必須 (容器当たり)
-    val calories: Int = 0, // オプション (一食当たり)
-    val fat: Int = 0,      // オプション
-    val sodium: Int = 0,   // オプション (g/一食当たり)
-    val carbohydrate: Int = 0 // オプション (g/一食当たり)
-)
-```
-
-呼び出し側は以下となります。
-
-```Kotlin
-val cocaCola = NutritionFacts(servingSize = 240, servings = 8, calories = 100, fat = 0, sodium = 35, carbohydrate = 27)
-```
-:::
-
-
 
 
 ### 2.2. JavaBeansパターン
 #### 2.2.1. 概要
-- オブジェクトを初期化後に、セッターメソッドでパラメータを設定するアプローチ。
+「JavaBeans」という名前は、Javaプラットフォームにおいて再利用可能なソフトウェアコンポーネントを指すために用いられます。JavaBeans規格に従って設計されたクラスは、プロパティ、イベント、メソッドを備えており、ビジュアルプログラミング環境で容易に操作できるようになっています。JavaBeansパターンとは、この規格に従い、プロパティに対してセッターとゲッターメソッドを提供することにより、オブジェクトの状態を柔軟に管理できるようにする設計手法です。この名前の由来は、Javaプログラミング言語と、コーヒー豆（beans）にちなんだプレイフルな命名から来ています。
 
-#### 2.2.2. 課題と限界
-- 一貫性のない状態になる可能性や生成プロセスが複雑になる問題。
+もっと詳しく知りたい方は[こちら](https://blog1.mammb.com/entry/2019/12/06/090000)を参考にしてください。
 
-## 3. ビルダーパターンの紹介
-### 3.1. ビルダーパターンとは
-- テレスコーピングとJavaBeansの中間に位置するデザインパターンの説明。
+#### 2.2.2. 事例
 
-### 3.2. 具体例
-#### 3.2.1. 基礎
-- ビルダーパターンを使ったシンプルな実装例。
+さきほどと同じようにNutritionFactsは加工食品の栄養成分のクラスを作成します。
 
-#### 3.2.2. クラス階層での適用
-- 階層的なクラス構造にビルダーパターンを適用する方法。
+```java
+public class NutritionFacts {
+    private int servingSize = -1; // 必須：デフォルト値はない
+    private int servings = -1;    // 必須：デフォルト値はない
+    private int calories = 0;
+    private int fat = 0;
+    private int sodium = 0;
+    private int carbohydrate = 0;
 
-### 3.3. ビルダーパターンのメリット
-- より多くのパラメータを持つ場合に、安全性と可読性をどのように向上させるか。
+    public NutritionFacts() {}
 
-### 3.4. 安全性と可読性の向上
-- 生成コードのクリアさとバグ検出のしやすさ。
+    // セッターメソッド
+    public void setServingSize(int val) { servingSize = val; }
+    public void setServings(int val) { servings = val; }
+    public void setCalories(int val) { calories = val; }
+    public void setFat(int val) { fat = val; }
+    public void setSodium(int val) { sodium = val; }
+    public void setCarbohydrate(int val) { carbohydrate = val; }
+}
+```
 
-## 4. ビルダーパターンの詳細
-### 4.1. 不変性
-- ビルダーを利用した後のオブジェクトの不変性について。
+呼び出し側は以下の通りです。パラメータ登録が複数の呼び出しに分割されているので呼び忘れなどの懸念がありそうです。
+```java
+NutritionFacts cocaCola = new NutritionFacts();
+        cocaCola.setServingSize(240);      // mL
+        cocaCola.setServings(8);           // 容器当たり
+        cocaCola.setCalories(100);         // 一食当たり
+        cocaCola.setFat(0);                // オプション
+        cocaCola.setSodium(35);            // オプション
+        cocaCola.setCarbohydrate(27);      // オプション
+```
 
-### 4.2. 検証と検査
-- オブジェクト生成前のパラメータの正しさを確認する重要性。
+#### 2.2.3. 課題
 
-### 4.3. 階層的デザイン
-#### 4.3.1. ピザの例
-- ピザとそのサブクラスを用いてビルダーパターンを説明。
+- 不完全な状態でのオブジェクトの利用になる可能性がある
+- クラスを不変にできない
 
-#### 4.3.2. ビルダー階層
-- より複雑なクラス構造にビルダーパターンをどのように適用するか。
+### 2.3. ビルダーパターン
 
-## 5. 結論と応用
-### 5.1. デザインパターンの選択
-- どのシナリオでどのパターンを使うべきかについての指針。
+#### 2.3.1. 概要
+ビルダーパターンの名前は、そのパターンの性質から来ています。このパターンは、最終的なオブジェクトを段階的に構築するビルダー（建設者）に喩えられます。具体的には、ビルダークラスが途中の構築状態をカプセル化し、最終的なオブジェクトの構築を一連のステップを通じて行うという特徴があります。実際の建設現場で建築士が設計図に基づき部品を組み立てるプロセスに似ており、そのアナロジーからこの名前がつけられています。
 
-### 5.2. ビルダーパターンの実践的価値
-- 実際のプロジェクトでビルダーパターンを使用する利点と例。
+#### 2.3.2. 事例
+以下はNutritionFactsクラスのビルダーパターンを使用した実装例です。この例では、必要なパラメータを段階的に設定し、最終的に完全なオブジェクトを構築します。
 
-## 6. 参考資料
-- 本文書で言及された文献や追加情報。
+```java
+public class NutritionFacts {
+    private final int servingSize;
+    private final int servings;
+    private final int calories;
+    private final int fat;
+    private final int sodium;
+    private final int carbohydrate;
+
+    public static class Builder {
+        // 必須パラメータ
+        private final int servingSize;
+        private final int servings;
+
+        // オプション
+        private int calories = 0;
+        private int fat = 0;
+        private int sodium = 0;
+        private int carbohydrate = 0;
+
+        public Builder(int servingSize, int servings) {
+            this.servingSize = servingSize;
+            this.servings = servings;
+        }
+
+        public Builder calories(int val) {
+            calories = val;
+            return this;
+        }
+
+        public Builder fat(int val) {
+            fat = val;
+            return this;
+        }
+
+        public Builder sodium(int val) {
+            sodium = val;
+            return this;
+        }
+
+        public Builder carbohydrate(int val) {
+            carbohydrate = val;
+            return this;
+        }
+
+        public NutritionFacts build() {
+            return new NutritionFacts(this);
+        }
+    }
+
+    private NutritionFacts(Builder builder) {
+        servingSize = builder.servingSize;
+        servings = builder.servings;
+        calories = builder.calories;
+        fat = builder.fat;
+        sodium = builder.sodium;
+        carbohydrate = builder.carbohydrate;
+    }
+}
+```
+呼び出し側は以下の通りです。必須パラメータとオプションが分かれている点や、生成が分割されていない点も良さそうです。
+```java
+NutritionFacts cocaCola = new NutritionFacts.Builder(240, 8)
+    .calories(100)
+    .fat(0)
+    .sodium(35)
+    .carbohydrate(27)
+    .build();
+```
+
+従って、テレスコーピングコンストラクタよりもコードが読みやすく、JavaBeansよりも安全にインスタンスを生成できます。
+
+#### 2.3.3. 課題
+- 冗長になる
+
+## 3. Kotlinで考えてみる
+
+KotlinでもJavaと同様に、コンストラクタを用いてクラスのインスタンスを生成します。ただし、Kotlinでは「プライマリコンストラクタ」と「セカンダリコンストラクタ」という、二つの異なるタイプのコンストラクタが存在します。
+
+:::details プライマリコンストラクタとセカンダリコンストラクタについて
+
+Javaと同じようにコーディングしたければ、セカンダリコンストラクタだけを定義すればできます。
+
+```kotlin
+class NutritionFacts(val servingSize: Int, val servings: Int) { // プライマリコンストラクタ
+    var calories: Int = 0
+    var fat: Int = 0
+    var sodium: Int = 0
+    var carbohydrate: Int = 0
+
+    // セカンダリコンストラクタ: すべてのオプショナルパラメータを追加
+    constructor(servingSize: Int, servings: Int, calories: Int, fat: Int, sodium: Int, carbohydrate: Int) : this(servingSize, servings, calories, fat, sodium) {
+        this.carbohydrate = carbohydrate
+    }
+}
+```
+:::
+
+さきほどのNutritionFactsをKotlinで書くとこうなります。
+```kotlin
+data class NutritionFacts(
+    val servingSize: Int,
+    val servings: Int,
+    val calories: Int = 0,
+    val fat: Int = 0,
+    val sodium: Int = 0,
+    val carbohydrate: Int = 0
+)
+```
+
+data classは、データ保持用のクラスに最適で、自動的にequals(), hashCode(), toString()、copy()などのメソッドを生成します。
+
+呼び出し側は以下の通りです。
+```Kotlin
+val cocaCola = NutritionFacts(servingSize = 240, servings = 8, calories = 100, fat = 0, sodium = 35, carbohydrate = 27)
+```
+
+Kotlinであれば、ボイラープレートコードを追加することなく実装できるのでよりシンプルになります。
+
+:::message
+裏側ではボイラープレートコードを生成してくれていることでシンプルさを実現しているのでKotlinを使うとしてもJavaの理解が深いとより良いですね。
+:::
+
+## 4. まとめ
+
+比較すると、多くのパラメータを持つクラスを設計する際はビルダーパターンが良い選択になりそうです。
